@@ -96,7 +96,7 @@ public class GameManager : MonoBehaviour
 
         numberSelector.ResetToOne();
 
-        for (int i = 0; i <= SelectorBtns.Length; i++)
+        for (int i = 0; i < SelectorBtns.Length; i++)
         {
             SelectorBtns[i].interactable = true;
         }
@@ -121,13 +121,13 @@ public class GameManager : MonoBehaviour
 
     public void ConfirmSelection()
     {
-        if (currentState != GameState.AwaitingSelection || turnLocked)
+        if (currentState != GameState.AwaitingSelection || turnLocked || numberSelector.IsAnimating)
             return;
 
         turnLocked = true;
         currentState = GameState.ResolvingTurn;
 
-        for (int i = 0; i <= SelectorBtns.Length; i++)
+        for (int i = 0; i < SelectorBtns.Length; i++)
         {
             SelectorBtns[i].interactable = false;
         }
@@ -219,7 +219,7 @@ public class GameManager : MonoBehaviour
         currentState = GameState.GameOver;
         turnLocked = true;
 
-        for (int i = 0; i <= SelectorBtns.Length; i++)
+        for (int i = 0; i < SelectorBtns.Length; i++)
         {
             SelectorBtns[i].interactable = false;
         }

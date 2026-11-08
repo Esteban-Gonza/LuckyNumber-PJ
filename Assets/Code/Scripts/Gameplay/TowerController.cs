@@ -32,7 +32,7 @@ public class TowerController : MonoBehaviour
     {
         if (blockPrefab == null || blockMaterial == null)
         {
-            Debug.LogError("Block Prefab o Block Material no asignado.");
+            Debug.LogError("Block Prefab or Block Material not assigned.");
             return;
         }
 

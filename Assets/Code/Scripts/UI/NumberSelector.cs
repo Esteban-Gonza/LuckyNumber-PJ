@@ -16,6 +16,7 @@ public class NumberSelector : MonoBehaviour
     private bool isAnimating = false;
 
     public int SelectedNumber => selectedNumber;
+    public bool IsAnimating => isAnimating;
 
     private void Start()
     {
