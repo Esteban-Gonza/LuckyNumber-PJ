@@ -1,10 +1,18 @@
-
 using UnityEngine;
 using TMPro;
 using DG.Tweening;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    private enum GameState
+    {
+        Initializing,
+        AwaitingSelection,
+        ResolvingTurn,
+        GameOver
+    }
+
     [Header("Game Settings")]
     [Range(1, 4)]
     [SerializeField] private int playerCount = 2;
@@ -22,6 +30,7 @@ public class GameManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private NumberSelector numberSelector;
     [SerializeField] private TowerController tower;
+    [SerializeField] Button[] SelectorBtns;
 
     [Space(5)][Header("UI")]
     [SerializeField] private TMP_Text turnText;
@@ -40,23 +49,57 @@ public class GameManager : MonoBehaviour
     private float balanceIndex = 0f;
 
     private bool turnLocked = false;
-    private bool gameOver = false;
+
+    private GameState currentState = GameState.Initializing;
+    private Tween turnTransitionTween;
 
     private void Start()
     {
         playerCount = Mathf.Clamp(playerCount, 1, 4);
 
-        resultText.text = "";
+        if (!ValidateReferences())
+        {
+            enabled = false;
+            return;
+        }
 
-        BeginTurn();
+        resultText.text = "";
         UpdateHeight();
+        BeginTurn();
+    }
+
+    private bool ValidateReferences()
+    {
+        if (numberSelector == null || tower == null ||turnText == null || heightText == null || resultText == null)
+        {
+            Debug.LogError("References missing on GameManager. ");
+
+            return false;
+        }
+
+        if (luckyMaterial == null || neutralMaterial == null || unluckyMaterial == null)
+        {
+            Debug.LogError("Material not assigned");
+
+            return false;
+        }
+
+        return true;
     }
 
     private void BeginTurn()
     {
-        if (gameOver) return;
+        if (currentState == GameState.GameOver)
+            return;
+
+        currentState = GameState.AwaitingSelection;
 
         numberSelector.ResetToOne();
+
+        for (int i = 0; i <= SelectorBtns.Length; i++)
+        {
+            SelectorBtns[i].interactable = true;
+        }
 
         luckyNumber = Random.Range(1, 8);
 
@@ -67,27 +110,35 @@ public class GameManager : MonoBehaviour
         while (unluckyNumber == luckyNumber);
 
         turnLocked = false;
-
-        turnText.text = playerCount == 1 ? "YOUR TURN" : "PLAYER " + currentPlayer + "'S TURN";
-        resultText.text = "Choose your blocks!";
-
         turnNumber++;
 
-        Debug.Log($"Turno {turnNumber} | " + $"Jugador {currentPlayer + 1} | " + $"Suerte: {luckyNumber} | " + $"Mala suerte: {unluckyNumber}");
+        turnText.text = playerCount == 1 ? "YOUR TURN" : "PLAYER " + currentPlayer + "'S TURN";
+
+        resultText.text = "Choose your blocks!";
+
+        Debug.Log($"TURN {turnNumber} | " + $"Player: {currentPlayer} | " + $"Luck: {luckyNumber} | " + $"Bad Luck: {unluckyNumber}");
     }
 
     public void ConfirmSelection()
     {
-        if (turnLocked || gameOver) return;
+        if (currentState != GameState.AwaitingSelection || turnLocked)
+            return;
 
         turnLocked = true;
+        currentState = GameState.ResolvingTurn;
 
-        float previousBalance = balanceIndex;
+        for (int i = 0; i <= SelectorBtns.Length; i++)
+        {
+            SelectorBtns[i].interactable = false;
+        }
+
         int selected = numberSelector.SelectedNumber;
-
         int blocksToAdd = selected;
 
+        float previousBalance = balanceIndex;
+
         Material resultMaterial;
+        string resultName;
 
         if (selected == luckyNumber)
         {
@@ -96,16 +147,18 @@ public class GameManager : MonoBehaviour
             balanceIndex -= decrease;
 
             resultMaterial = luckyMaterial;
+            resultName = "LUCKY";
 
             resultText.text = "LUCKY! The tower steadies.";
         }
         else if (selected == unluckyNumber)
         {
-            int increase = Random.Range(unluckyIncreaseRange.x, unluckyIncreaseRange.y + 1);
+            int increase = Random.Range(unluckyIncreaseRange.x,unluckyIncreaseRange.y + 1);
 
             balanceIndex += increase;
 
             resultMaterial = unluckyMaterial;
+            resultName = "UNLUCKY";
 
             resultText.text = "BAD LUCK! The tower shakes!";
         }
@@ -116,12 +169,17 @@ public class GameManager : MonoBehaviour
             balanceIndex += increase;
 
             resultMaterial = neutralMaterial;
+            resultName = "NEUTRAL";
 
             resultText.text = "NEUTRAL! The tower wobbles.";
         }
 
-        balanceIndex = Mathf.Clamp(balanceIndex,0f,100f);
-        Debug.Log($"BALANCE UPDATE | " + $"Balance anterior: {previousBalance}% | " + $"Balance actual: {balanceIndex}% | " +);
+        balanceIndex = Mathf.Clamp(balanceIndex, 0f, 100f);
+
+        float balanceVariation = balanceIndex - previousBalance;
+
+        Debug.Log($"RESULT | " +$"Turn: {turnNumber} | " + $"Player: {currentPlayer} | " + $"Selected number: {selected} | " + $"Result: {resultName}");
+        Debug.Log($"BALANCE UPDATE | " + $"Previous: {previousBalance:F0}% | " + $"Current: {balanceIndex:F0}% | " + $"Variation: {balanceVariation:+0;-0;0}%");
 
         tower.AddBlocks(blocksToAdd, resultMaterial);
         tower.SetBalance(balanceIndex);
@@ -134,19 +192,19 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        DOVirtual.DelayedCall(resultDisplayDuration, NextTurn);
+        turnTransitionTween?.Kill();
+        turnTransitionTween = DOVirtual.DelayedCall(resultDisplayDuration, NextTurn);
     }
 
     private void NextTurn()
     {
-        if (gameOver) return;
+        if (currentState == GameState.GameOver)
+            return;
 
         currentPlayer++;
 
         if (currentPlayer > playerCount)
-        {
             currentPlayer = 1;
-        }
 
         BeginTurn();
     }
@@ -158,13 +216,27 @@ public class GameManager : MonoBehaviour
 
     private void EndGame()
     {
-        gameOver = true;
+        currentState = GameState.GameOver;
         turnLocked = true;
+
+        for (int i = 0; i <= SelectorBtns.Length; i++)
+        {
+            SelectorBtns[i].interactable = false;
+        }
+
+        turnTransitionTween?.Kill();
+        turnTransitionTween = null;
 
         turnText.text = "GAME OVER";
 
         resultText.text = playerCount == 1 ? "The tower collapsed!" : "PLAYER " + currentPlayer + " LOST!";
 
-        Debug.Log("Game Over. Final height: " + tower.BlockCount);
+        Debug.Log($"GAME OVER | " + $"Loser player: {currentPlayer} | " + $"Final Height: {tower.BlockCount} | " + $"Final balance: {balanceIndex:F0}%");
+    }
+
+    private void OnDisable()
+    {
+        turnTransitionTween?.Kill();
+        turnTransitionTween = null;
     }
 }
