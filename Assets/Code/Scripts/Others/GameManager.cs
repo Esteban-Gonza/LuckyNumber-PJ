@@ -182,15 +182,20 @@ public class GameManager : MonoBehaviour
         Debug.Log($"BALANCE UPDATE | " + $"Previous: {previousBalance:F0}% | " + $"Current: {balanceIndex:F0}% | " + $"Variation: {balanceVariation:+0;-0;0}%");
 
         tower.AddBlocks(blocksToAdd, resultMaterial);
-        tower.SetBalance(balanceIndex);
 
         UpdateHeight();
 
         if (balanceIndex >= 100f)
         {
-            EndGame();
+            resultText.text = "THE TOWER IS COLLAPSING!";
+            turnText.text = "HOLD ON!";
+
+            tower.SetBalance(balanceIndex, EndGame);
+
             return;
         }
+
+        tower.SetBalance(balanceIndex);
 
         turnTransitionTween?.Kill();
         turnTransitionTween = DOVirtual.DelayedCall(resultDisplayDuration, NextTurn);
