@@ -28,34 +28,31 @@ public class TowerController : MonoBehaviour
         fallDirection = Random.value < 0.5f ? -1 : 1;
     }
 
-    public void AddBlocks(int amount, Color blockColor)
+    public void AddBlocks(int amount, Material blockMaterial)
     {
-        if (isFalling) return;
+        if (blockPrefab == null || blockMaterial == null)
+        {
+            Debug.LogError("Block Prefab o Block Material no asignado.");
+            return;
+        }
 
         for (int i = 0; i < amount; i++)
         {
-            int currentIndex = blockCount;
+            int index = blockCount;
 
-            GameObject block = Instantiate(blockPrefab, transform);
+            GameObject newBlock = Instantiate(blockPrefab, transform);
 
-            block.transform.localPosition = new Vector3(0f, currentIndex * blockHeight + blockHeight / 2f, 0f);
+            newBlock.transform.localPosition = new Vector3(0, index * blockHeight + blockHeight / 2f, 0);
 
-            Renderer blockRenderer = block.GetComponentInChildren<Renderer>();
+            Renderer[] renderers = newBlock.GetComponentsInChildren<Renderer>();
 
-            if (blockRenderer != null)
+            foreach (Renderer blockRenderer in renderers)
             {
-                MaterialPropertyBlock properties =new MaterialPropertyBlock();
-
-                blockRenderer.GetPropertyBlock(properties);
-
-                properties.SetColor("_BaseColor", blockColor);
-                properties.SetColor("_Color", blockColor);
-
-                blockRenderer.SetPropertyBlock(properties);
+                blockRenderer.sharedMaterial = blockMaterial;
             }
 
-            block.transform.localScale = Vector3.zero;
-            block.transform.DOScale(blockSize, 0.2f).SetDelay(i * blockDelay).SetEase(Ease.OutBack);
+            newBlock.transform.localScale = Vector3.zero;
+            newBlock.transform.DOScale(blockSize, 0.2f).SetDelay(i * blockDelay).SetEase(Ease.OutBack);
 
             blockCount++;
         }

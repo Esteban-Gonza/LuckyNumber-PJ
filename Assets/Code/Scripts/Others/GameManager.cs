@@ -14,21 +14,25 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Vector2Int neutralIncreaseRange = new Vector2Int(2, 4);
     [SerializeField] private Vector2Int unluckyIncreaseRange = new Vector2Int(12, 25);
 
-    [Header("Block Colors")]
-    [SerializeField] private Color luckyColor = Color.green;
-    [SerializeField] private Color neutralColor = Color.white;
-    [SerializeField] private Color unluckyColor = Color.red;
+    [Header("Block Materials")]
+    [SerializeField] private Material luckyMaterial;
+    [SerializeField] private Material neutralMaterial;
+    [SerializeField] private Material unluckyMaterial;
 
     [Header("References")]
     [SerializeField] private NumberSelector numberSelector;
     [SerializeField] private TowerController tower;
 
-    [Header("UI")]
+    [Space(5)][Header("UI")]
     [SerializeField] private TMP_Text turnText;
     [SerializeField] private TMP_Text heightText;
     [SerializeField] private TMP_Text resultText;
 
+    [Header("Feedback Settings")]
+    [SerializeField] private float resultDisplayDuration = 2.5f;
+
     private int currentPlayer = 1;
+    private int turnNumber = 0;
 
     private int luckyNumber;
     private int unluckyNumber;
@@ -66,6 +70,10 @@ public class GameManager : MonoBehaviour
 
         turnText.text = playerCount == 1 ? "YOUR TURN" : "PLAYER " + currentPlayer + "'S TURN";
         resultText.text = "Choose your blocks!";
+
+        turnNumber++;
+
+        Debug.Log($"Turno {turnNumber} | " + $"Jugador {currentPlayer + 1} | " + $"Suerte: {luckyNumber} | " + $"Mala suerte: {unluckyNumber}");
     }
 
     public void ConfirmSelection()
@@ -74,11 +82,12 @@ public class GameManager : MonoBehaviour
 
         turnLocked = true;
 
+        float previousBalance = balanceIndex;
         int selected = numberSelector.SelectedNumber;
 
         int blocksToAdd = selected;
 
-        Color resultColor;
+        Material resultMaterial;
 
         if (selected == luckyNumber)
         {
@@ -86,7 +95,7 @@ public class GameManager : MonoBehaviour
 
             balanceIndex -= decrease;
 
-            resultColor = luckyColor;
+            resultMaterial = luckyMaterial;
 
             resultText.text = "LUCKY! The tower steadies.";
         }
@@ -96,7 +105,7 @@ public class GameManager : MonoBehaviour
 
             balanceIndex += increase;
 
-            resultColor = unluckyColor;
+            resultMaterial = unluckyMaterial;
 
             resultText.text = "BAD LUCK! The tower shakes!";
         }
@@ -106,14 +115,15 @@ public class GameManager : MonoBehaviour
 
             balanceIndex += increase;
 
-            resultColor = neutralColor;
+            resultMaterial = neutralMaterial;
 
             resultText.text = "NEUTRAL! The tower wobbles.";
         }
 
         balanceIndex = Mathf.Clamp(balanceIndex,0f,100f);
+        Debug.Log($"BALANCE UPDATE | " + $"Balance anterior: {previousBalance}% | " + $"Balance actual: {balanceIndex}% | " +);
 
-        tower.AddBlocks(blocksToAdd, resultColor);
+        tower.AddBlocks(blocksToAdd, resultMaterial);
         tower.SetBalance(balanceIndex);
 
         UpdateHeight();
@@ -124,7 +134,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        DOVirtual.DelayedCall(0.8f, NextTurn);
+        DOVirtual.DelayedCall(resultDisplayDuration, NextTurn);
     }
 
     private void NextTurn()
