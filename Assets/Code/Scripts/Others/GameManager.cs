@@ -114,6 +114,7 @@ public class GameManager : MonoBehaviour
 
         turnText.text = playerCount == 1 ? "YOUR TURN" : "PLAYER " + currentPlayer + "'S TURN";
 
+        resultText.color = new Color32(0xE6, 0xB6, 0x5C, 0xFF);
         resultText.text = "Choose your blocks!";
 
         Debug.Log($"TURN {turnNumber} | " + $"Player: {currentPlayer} | " + $"Luck: {luckyNumber} | " + $"Bad Luck: {unluckyNumber}");
@@ -149,6 +150,7 @@ public class GameManager : MonoBehaviour
             resultMaterial = luckyMaterial;
             resultName = "LUCKY";
 
+            resultText.color = new Color32(0x38, 0xA8, 0x78, 0xFF);
             resultText.text = "LUCKY! The tower steadies.";
         }
         else if (selected == unluckyNumber)
@@ -160,6 +162,7 @@ public class GameManager : MonoBehaviour
             resultMaterial = unluckyMaterial;
             resultName = "UNLUCKY";
 
+            resultText.color = new Color32(0xE4, 0x5C, 0x59, 0xFF);
             resultText.text = "BAD LUCK! The tower shakes!";
         }
         else
@@ -171,6 +174,7 @@ public class GameManager : MonoBehaviour
             resultMaterial = neutralMaterial;
             resultName = "NEUTRAL";
 
+            resultText.color = new Color32(0xE6, 0xB6, 0x5C, 0xFF);
             resultText.text = "NEUTRAL! The tower wobbles.";
         }
 
@@ -187,6 +191,7 @@ public class GameManager : MonoBehaviour
 
         if (balanceIndex >= 100f)
         {
+            resultText.color = new Color32(0xE4, 0x5C, 0x59, 0xFF);
             resultText.text = "THE TOWER IS COLLAPSING!";
             turnText.text = "HOLD ON!";
 
@@ -234,6 +239,7 @@ public class GameManager : MonoBehaviour
 
         turnText.text = "GAME OVER";
 
+        resultText.color = new Color32(0xE4, 0x5C, 0x59, 0xFF);
         resultText.text = playerCount == 1 ? "The tower collapsed!" : "PLAYER " + currentPlayer + " LOST!";
 
         Debug.Log($"GAME OVER | " + $"Loser player: {currentPlayer} | " + $"Final Height: {tower.BlockCount} | " + $"Final balance: {balanceIndex:F0}%");
